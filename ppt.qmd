@@ -1,0 +1,277 @@
+---
+title: "공항 컨설팅"
+author: "1조"
+date: 2025-03-18
+format: 
+    revealjs:
+        footer: Airport Operations Plan
+---
+
+공항에서 필요한 부분 그걸 채워줄수 있는 항공사는 무엇일까?
+# 목차
+- [분석 목적 및 배경]
+    - [데이터 소개]
+    - [목표]
+
+- [데이터 전처리]
+    - [항공사 분석]
+        - [항공사별 선호 기종]
+        - [항공사별 선호 노선]
+        - [항공사별 선호 운행시간]
+        - [항공사별 delay 시간]
+    - [비행기 모델 분석]
+        - [비행기 모델별 좌석수]
+        - [비행기 모델별 비행가능 시간]
+        - [비행기 모델별 가격]
+        - [비행기 모델별 비행횟수]
+
+- [JFK]
+
+    - [선호 루트]
+        - [선호 루트에 적합한 기종을 운행하는 항공사]
+
+
+    - [공항 피크타임]
+        - [큰 비행기를 운행하는 항공사]
+        - [널널 시간에 운행을 선호하는 항공사]
+
+    - [장점강화 단점보완]
+
+- [EWR]
+
+    - [선호 루트]
+        - [선호 루트에 적합한 기종을 운행하는 항공사]
+
+
+    - [공항 피크타임]
+        - [큰 비행기를 운행하는 항공사]
+        - [널널 시간에 운행을 선호하는 항공사]
+
+    - [장점강화 단점보완]
+
+- [LGA]
+
+    - [선호 루트]
+        - [선호 루트에 적합한 기종을 운행하는 항공사]
+
+
+    - [공항 피크타임]
+        - [큰 비행기를 운행하는 항공사]
+        - [널널 시간에 운행을 선호하는 항공사]
+
+    - [장점강화 단점보완]    
+
+---
+
+# 분석 목적 및 배경
+
+## 데이터 소개
+
+```{python}
+from nycflights13 import flights, planes
+flights.info()
+planes.info()
+```
+
+## 목표
+
+설명 내용을 여기에 추가하세요.
+
+---
+
+# 데이터 전처리
+
+```{python}
+import pandas as pd
+import numpy as np
+merged = pd.merge(flights, planes, on='tailnum', how='left')
+```
+
+## 항공사 분석
+
+### 항공사별 선호 기종
+
+```{python}
+carrier_prefer_model = merged.pivot_table(
+    index=['carrier','model','tailnum'],
+    aggfunc='count'
+).reset_index()
+
+carrier_prefer_model=carrier_prefer_model.pivot_table(
+    index=['carrier','model'],
+    values='tailnum',
+    aggfunc='count'
+).reset_index()
+
+carrier_prefer_model = carrier_prefer_model.rename(columns = {'tailnum' : 'count'})
+
+# 항공사별 선호기종 운행 개수 몇개이상이여야 선호한다고 할지 정하기
+carrier_prefer_model
+```
+
+
+### 항공사별 선호 노선
+
+```{python}
+carrier_prefer_dest = pd.DataFrame(merged.groupby(['carrier','dest'])['origin'].count()).reset_index()
+carrier_prefer_dest = carrier_prefer_dest.rename(columns = {'origin' : 'count'})
+
+# 항공사별 선호 노선 상위 몇개까지 선호한다고 판단할지
+carrier_prefer_dest
+```
+
+### 항공사별 선호 운행시간
+
+```{python}
+carrier_prefer_hour = pd.DataFrame(merged.groupby(['carrier','hour'])['origin'].count()).reset_index()
+carrier_prefer_hour = carrier_prefer_hour.rename(columns = {'origin' : 'count'})
+# 각 항공사별 상위 몇개까지 선호한다고 판단할지 정하기
+carrier_prefer_hour
+```
+
+
+### 항공사별 delay 시간
+
+```{python}
+carrier_mean_delay = pd.DataFrame(merged.groupby('carrier')['dep_delay'].mean()).reset_index()
+carrier_mean_delay = carrier_mean_delay.rename(columns = {'dep_delay' : 'dep_mean_delay'})
+carrier_mean_delay = carrier_mean_delay.sort_values('dep_mean_delay',ascending=False)
+# 항공사별 평균 출발 지연 시간
+carrier_mean_delay
+```
+
+---
+
+## 비행기 모델 분석
+
+### 비행기 모델별 좌석수
+
+설명 내용을 여기에 추가하세요.
+
+### 비행기 모델별 비행가능 시간
+
+설명 내용을 여기에 추가하세요.
+
+### 비행기 모델별 가격
+
+설명 내용을 여기에 추가하세요.
+
+### 비행기 모델별 비행횟수
+
+설명 내용을 여기에 추가하세요.
+
+---
+
+# JFK 공항 분석
+
+## 선호 루트
+
+### 선호 루트에 적합한 기종을 운행하는 항공사
+
+설명 내용을 여기에 추가하세요.
+
+## 공항 피크타임
+
+### 큰 비행기를 운행하는 항공사
+
+설명 내용을 여기에 추가하세요.
+
+### 널널 시간에 운행을 선호하는 항공사
+
+설명 내용을 여기에 추가하세요.
+
+## 장점강화 단점보완
+
+설명 내용을 여기에 추가하세요.
+
+---
+
+# EWR 공항 분석
+
+## 선호 루트
+
+### 선호 루트에 적합한 기종을 운행하는 항공사
+
+설명 내용을 여기에 추가하세요.
+
+## 공항 피크타임
+
+### 큰 비행기를 운행하는 항공사
+
+설명 내용을 여기에 추가하세요.
+
+### 널널 시간에 운행을 선호하는 항공사
+
+설명 내용을 여기에 추가하세요.
+
+## 장점강화 단점보완
+
+설명 내용을 여기에 추가하세요.
+
+---
+
+# LGA 공항 분석
+
+## 선호 루트
+
+### 선호 루트에 적합한 기종을 운행하는 항공사
+
+설명 내용을 여기에 추가하세요.
+
+## 공항 피크타임
+
+### 큰 비행기를 운행하는 항공사
+
+설명 내용을 여기에 추가하세요.
+
+### 널널 시간에 운행을 선호하는 항공사
+
+설명 내용을 여기에 추가하세요.
+
+## 장점강화 단점보완
+
+설명 내용을 여기에 추가하세요.
+
+
+
+
+
+# 1. 분석 목적 및 배경
+- **목적**: 비행기 구매 전략 수립을 위한 데이터 분석
+- **배경**: 운행 거리와 시트 수 간의 관계를 분석하여 항공사 구매 전략 수립에 기여
+
+---
+
+# 2. 데이터 소개
+- **사용된 데이터**: `nycflights13`의 `flights`와 `planes` 데이터
+- **주요 변수**:
+  - `seats`: 비행기 좌석 수
+  - `distance`: 운행 거리
+  - `flight_count`: 운행 횟수
+- **데이터 병합**: `tailnum`을 기준으로 `flights`와 `planes` 데이터를 병합
+
+---
+
+# 3. 분석 방법
+- **병합**: `flights`와 `planes` 데이터 병합
+- **시각화**: 
+  - 산점도를 이용하여 운행 거리와 시트 수 간의 관계 확인
+  - 박스 플롯을 통해 거리 유형별 시트 수 분포 분석
+- **그룹화 및 집계**: 
+  - 거리 유형별 평균 좌석 수 및 총 좌석 수 집계
+
+---
+
+# 4. 주요 분석 결과
+- **결과 1**: 운행 거리와 좌석 수 간의 관계 확인
+- **결과 2**: 거리 유형별 평균 좌석 수 분석
+- **결과 3**: 수익성이 높은 노선 분석
+
+---
+
+# 5. 결론 및 향후 계획
+- **결론**: 비행기 구매 전략 수립을 위한 주요 인사이트 도출
+- **향후 계획**: 추가 분석을 통해 특정 공항에 대한 전략 강화
+
+---
+
