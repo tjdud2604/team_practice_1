@@ -1,0 +1,123 @@
+/* === 첫 페이지 타이틀 스타일 (QMD 기본 h1) === */
+.reveal h1 {
+    font-size: 2em;
+    font-weight: bold;
+    text-align: center;
+    color: #032446; /* 파란색 포인트 */
+}
+
+/* === 서브타이틀 스타일 (중앙 정렬 & 색상 변경 가능) === */
+.reveal .subtitle {
+    text-align: center; /* 중앙 정렬 */
+    font-size: 1.5em; /* 크기 조정 */
+    color: #032446; /* 파란색 계열 */
+    font-weight: 500;
+    margin-top: 10px;
+}
+/* === 서브타이틀 스타일 (중앙 정렬 & 색상 변경 가능) === */
+.reveal .author {
+    text-align: center; /* 중앙 정렬 */
+    font-size: 1em; /* 크기 조정 */
+    color: #032446; /* 파란색 계열 */
+    font-weight: 500;
+    margin-top: 10px;
+}
+
+/* === 모든 페이지 공통 소제목 스타일 (QMD 기본 h2) === */
+.reveal h2 {
+    font-size: 30px;
+    font-weight: 700;
+    color: #032446; /* 파란색 */
+    text-align: left;
+    margin-bottom: 10px;
+}
+
+/* === 제목 아래 구분선 자동 적용 === */
+.reveal h2::after {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 3px;
+    background-color: #03182c83;
+    margin-top: 5px;
+}
+
+/* === 본문 스타일 (QMD 기본 p) === */
+.reveal p {
+    font-size: 20px;
+    color: #333;
+    line-height: 1.6;
+    text-align: left;
+}
+
+/* === 코드 블록 스타일 === */
+.reveal pre {
+    background: #ffffff; /* 연한 파란색 배경 */
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 15px;
+    color: #0056b3;
+
+}
+
+/* === 실행 결과 블록 스타일 ===
+.reveal div.cell-output {
+    background: #ffffff;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 35px;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    color: #222;
+    border: 1px solid #ddd;
+    width: 800px;
+    max-width: 1000px;
+    min-height: 30px;
+} */
+
+/* === 그래프 & 이미지 스타일 ===
+.reveal img {
+    max-width: 80%;
+    height: auto;
+    margin: auto;
+    display: block;
+} */
+
+
+/* === 체크 아이콘이 적용될 하위 리스트 스타일 (p 태그와 동일하게 조정) === */
+.checked-list {
+    list-style: none; /* 기본 리스트 스타일 제거 */
+    padding-left: 0;
+}
+
+/* 최상위 리스트 스타일 */
+.checked-list > li {
+    font-size: 20px; /* p 태그와 동일한 크기 */
+    padding: 6px 0;
+    color: #333; /* p 태그와 동일한 색상 */
+    line-height: 1.6;
+}
+
+/* 하위 리스트(들여쓰기된 리스트) 스타일 */
+.checked-list ul {
+    list-style: none;
+    padding-left: 20px;
+}
+
+.checked-list ul li {
+    font-size: 20px; /* p 태그와 동일한 크기 */
+    padding: 4px 0;
+    display: flex;
+    align-items: center;
+    color: #333; /* p 태그와 동일한 색상 */
+    line-height: 1.6;
+}
+
+/* 체크 아이콘 스타일 */
+.checked-list ul li::before {
+    content: "✔"; /* 체크 표시 */
+    color: #007BFF; /* 파란색 */
+    font-weight: bold;
+    font-size: 1.2em; /* 아이콘 크기 조정 */
+    margin-right: 8px;
+    display: inline-block;
+}
