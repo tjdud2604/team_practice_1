@@ -1,0 +1,546 @@
+---
+title: "뉴욕 비행장 데이터 분석"
+subtitle: "JFK 공항 항공사 유치 전략 컨설팅"
+author: "1조"
+format: 
+  revealjs:
+      slide-number: true
+      transition: fade
+      background-size: cover  
+      css: custom.css
+---
+
+## 목차
+
+1.  분석 개요<br>
+분석 목표 및 주요 사용 데이터<br>
+
+2.  데이터 분석 및 인사이트 도출<br>
+데이터 전처리<br> 
+행선지 데이터 분석<br> 
+타 공항의 주 행선지와 JFK 공항 노선 비교<br>
+항공사별 주요 목적지 운항량 분석<br>
+시간대별 JFK 공항 혼잡도 분석<br>
+타겟 시간대 항공사별 운행량 분석<br>
+
+3.  결론<br>
+
+## 1-1.  분석 목표 및 주요 데이터 {.scrollable}
+
+```{python}
+import pandas as pd
+from nycflights13 import flights, planes
+import numpy as np
+
+flights.info()
+```
+
+<ul class="checked-list">
+<li>
+flights 데이터 주요 칼럼:
+<ul>
+<li> 목적: 항공사 유치를 위한 데이터 분석</li>
+<li>`carrier` : 항공사</li>
+<li>`flight` : 항공편</li>
+<li>`origin` : 출발공항</li>
+<li>`dest` : 도착공항</li>
+<li>`hour` : 출발 시간</li>
+</ul>
+</li>
+
+## 1-1. 주요 데이터 {.scrollable}
+
+```{python}
+planes.info()
+```
+
+<ul class="checked-list">
+<li>
+
+planes 데이터 주요 칼럼:
+
+<ul>
+<li>`seats`: 비행기 좌석 수</li>
+</ul>
+</li>
+</ul>
+
+
+## 2-1. 데이터 전처리 {.scrollable}
+<ul class="checked-list">
+<li>두 가지 데이터를 병합하여 분석 진행</li>
+</ul>
+
+```{python}
+#| echo: true
+merged = pd.merge(flights, planes, on='tailnum', how='left')
+merged.info()
+```
+
+---
+## 2-1. 데이터 전처리 {.scrollable}
+
+```{python}
+#| echo: true
+route = flights.groupby(['origin', 'dest']).size().reset_index(name='flight_count') # 출발 도착공항 운행량
+
+route_jfk = route[route['origin'] == 'JFK'] #JFK 필터링
+route_jfk.sort_values('flight_count', ascending=False) # 정렬
+top_jfk_routes = route_jfk.sort_values(by='flight_count', ascending=False).nlargest(5, 'flight_count')#상위 5개
+
+jfk_dest = set(top_jfk_routes['dest'])
+print(f'jfk_dest:{jfk_dest}')
+
+top_jfk_routes
+```
+
+<ul class="checked-list">
+<li>top_jfk_routes : JFK 공항에서 출발해서 가장 많이 도착하는 공항 5개의 운행량</li>
+</ul>
+
+## 2-1. 데이터 전처리 {.scrollable}
+
+```{python}
+#| echo: true
+route_lga = route[route['origin'] == 'LGA'] 
+top_lga_routes = route_lga.sort_values(by='flight_count', ascending=False).nlargest(5, 'flight_count')
+
+lga_dest = set(top_lga_routes['dest'])
+print(f'lga_dest:{lga_dest}')
+
+route_ewr = route[route['origin'] == 'EWR'] 
+top_ewr_routes = route_ewr.sort_values(by='flight_count', ascending=False).nlargest(5, 'flight_count')
+
+ewr_dest = set(top_ewr_routes['dest'])
+print(f'ewr_dest:{ewr_dest}')
+
+```
+
+<ul class="checked-list">
+<li>top_lga_routes : LGA 공항에서 출발해서 가장 많이 도착하는 공항 5개의 운행량</li>
+<li>top_ewr_routes : EWR 공항에서 출발해서 가장 많이 도착하는 공항 5개의 운행량</li>
+</ul>
+
+## 2-1. 데이터 전처리 {.scrollable}
+
+```{python}
+#| echo: true
+set_ = ewr_dest|lga_dest 
+print(f'set_:{set_}')
+set_2 = jfk_dest
+print(f'set_2:{set_2}')
+set_3 = jfk_dest|set_
+print(f'set_3:{set_3}')
+
+```
+
+<ul class="checked-list">
+<li>JFK와 두 공항을 비교하기 위해서 EWR과 LGA 공항을 set</li>
+<li>set_ : EWR과 LGA의 도착공항 상위 5개 이름</li>
+<li>set_2 : JFK의 도착공항 상위 5개 이름</li>
+<li>set_3 : 3개 공항 각 상위 5개 도착지 병합</li>
+</ul>
+
+
+## 2-2. 행선지 데이터 분석 {.scrollable}
+
+```{python}
+#| echo: true
+n_jfk_dest_flight = route_jfk.loc[((route_jfk['dest'].isin(set_3)))] # 공항 선호 도착지
+
+n_jfk_dest_flight.loc[:, 'origin_check'] = n_jfk_dest_flight['dest'].isin(set(top_jfk_routes['dest']))# JFK 도착지 TRUE
+
+n_jfk_dest_flight= n_jfk_dest_flight.sort_values('flight_count', ascending=False) # 정렬
+n_jfk_dest_flight
+```
+
+## 2-2. 행선지 데이터 분석 {.scrollable}
+
+```{python}
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+color = ['#08519c', '#08519c', '#08519c', '#08519c', '#08519c', '#9ecae1', '#9ecae1', '#9ecae1', '#9ecae1', '#9ecae1']
+plt.figure(figsize=(8, 5))
+sns.barplot(data=n_jfk_dest_flight, 
+                    x='dest',
+                    y="flight_count", 
+                    palette= color) 
+plt.xlabel("carriers")
+plt.ylabel("flight_count")
+plt.show()
+```
+
+<ul class="checked-list">
+<li>
+인기있는 행선지로 향하는 JFK 공항의 운행량
+<ul>
+<li>x축 : 각 공항별 상위 5개 도착공항 (중복 제외)</li>
+<li>y축 : JFK공항에서 해당 경로로 가는 운행량</li>
+<li>왼쪽 5개 항공사는 JFK 공항의 상위 5개 도착공항</li>
+</ul>
+</li>
+
+## 2-3. 타 공항의 주 행선지와 JFK 공항 노선 비교 {.scrollable}
+
+```{python}
+#| echo: true
+set_3 = list(set_3)
+
+target_origin = merged.loc[merged['dest'].isin(set_3)] #위 그래프 도착지 뽑기
+
+target_origin_pivot = target_origin.pivot_table(
+    index=['origin', 'carrier'],
+    values='flight',
+    aggfunc='count'
+).reset_index() # 공항 항공사 10개 노선 운행량
+target_JFK = target_origin_pivot.loc[target_origin_pivot['origin']=="JFK"] #JFK만
+target_JFK
+```
+
+## 2-3. 타 공항의 주 행선지와 JFK 공항 노선 비교 {.scrollable}
+
+```{python}
+#| echo: true
+target_other = target_origin_pivot.loc[~(target_origin_pivot['origin']=="JFK")].groupby('carrier')['flight'].sum() #JFK 제외 
+target_other = pd.DataFrame(target_other).reset_index()
+
+target_other['origin'] = ["other"]*len(target_other['carrier'])#칼럼 개수 맞추기
+target_origin = pd.concat([target_JFK, target_other], ignore_index=True)#병합
+
+target_other
+```
+
+## 2-3. 타 공항의 주 행선지와 JFK 공항 노선 비교 {.scrollable}
+
+```{python}
+#| echo: true
+# JFK와 기타 공항 운항 횟수 차이 계산
+pivot_diff = target_origin.pivot(index="carrier", 
+                columns="origin", 
+                values="flight").fillna(0)
+
+pivot_diff["flight_diff"] = pivot_diff["JFK"] - pivot_diff["other"] 
+pivot_diff = pivot_diff.reset_index()
+pivot_diff
+```
+
+## 2-3. 타 공항의 주 행선지와 JFK 공항 노선 비교 {.scrollable}
+
+```{python}
+plt.figure(figsize=(12, 6))
+
+sns.barplot(
+    data=pivot_diff,
+    x="carrier",
+    y="flight_diff",  
+    palette=["#deebf7" if x < 0 else "#08519c" for x in pivot_diff["flight_diff"]]
+)
+
+# 그래프 제목 및 축 레이블
+plt.xlabel("Carrier")
+plt.ylabel("Flight Difference")
+plt.xticks(rotation=45, ha="right")
+plt.axhline(0, color='black', linewidth=1)
+plt.show()
+```
+
+<ul class="checked-list">
+<li>
+주요 행선지로 향하는 JFK공항 주력 항공사:
+<ul>
+<li>x축 : 항공사 </li>
+<li>y축 : JFK 공항 운행량 - Other 공항 운행량</li>
+<li>양수값 : 타 공항에 비해 JFK에서 더 많이 운행하는 항공사</li>
+<li>음수값 : 타 공항에 비해 JFK에서 더 적게 운행하는 항공사</li>
+</ul>
+</li>
+
+
+## 2-4. 시간대별  JFK 공항 혼잡도 분석 {.scrollable}
+
+```{python}
+#| echo: true
+merged['time_hour'] = pd.to_datetime(merged['time_hour']) #날짜데이터 변환
+
+def week_select(x):
+    if x>4:
+        return True
+    else:
+        return False
+    
+merged['week'] = merged['time_hour'].dt.weekday.apply(week_select) #요일 변환 주말 True
+
+week_day_end = merged.loc[merged['origin']== 'JFK'].pivot_table(
+    index= ['hour', 'week'],
+    values='flight',
+    aggfunc='count'
+).reset_index() # JFK 시간 주별 운행량
+
+weekend = week_day_end.loc[week_day_end['week'] == 1]['flight']/2
+weekday = week_day_end.loc[week_day_end['week'] == 0]['flight']/5 #비율 대로 나누어
+
+combined = pd.concat([weekend, weekday], ignore_index=False) #합쳐서
+combined.sort_index()
+
+week_day_end['flight'] = combined.sort_index() #비율 맞춘 운행량 넣음
+week_day_end
+```
+
+## 2-4. 시간대별  JFK 공항 혼잡도 분석 {.scrollable}
+
+```{python}
+plt.figure(figsize=(12, 6))
+sns.barplot(
+    data=week_day_end,
+    x="hour", 
+    y="flight", 
+    hue="week",
+    palette={0: "lightblue", 1: "darkblue"}, 
+    ci=None)
+
+plt.xlabel("hour")
+plt.ylabel("Number of Flights")
+plt.xticks(rotation=45, ha="right")
+plt.grid(axis="y", linestyle="--", alpha=0.5)
+plt.show()
+```
+
+<ul class="checked-list">
+<li>
+JFK 공항의 주중/주말 혼잡도:
+<ul>
+<li>x축 : 시간 </li>
+<li>y축 : JFK 공항 운행량</li>
+<li>'주말'이랑'평일'이랑 큰 차이가 없음</li>
+<li>주말과 평일을 차이 두지 않고 분석 진행해도 무방하다고 판단</li>
+</ul>
+</li>
+
+## 2-4. 시간대별  JFK 공항 혼잡도 분석 {.scrollable}
+
+```{python}
+#| echo: true
+c_hour_flight = merged.pivot_table(
+    index= ['carrier', 'hour'],
+    values='flight',
+    aggfunc='count'
+).reset_index() #항공사 시간 운행량
+
+c_hour_flight = c_hour_flight.loc[c_hour_flight['flight']>=100].sort_values(by=['carrier', 'flight'], ascending=(True, False)) #작은 운행 항공사 제거 정렬
+
+defc = pd.DataFrame(week_day_end.groupby('hour')['flight'].sum()).reset_index() #주별 운행량 합침
+# day end flight count
+defc = defc.sort_values('flight', ascending=False) # 정렬
+
+need_time = list(set(defc.tail()['hour'])) # 항공사 추가 필요 시간
+print(need_time)
+```
+
+## 2-4. 시간대별  JFK 공항 혼잡도 분석 {.scrollable}
+
+```{python}
+hour_carrier = c_hour_flight.loc[c_hour_flight['hour'].isin(need_time)] # 필요시간대 항공사만 뽑아오기
+
+hour_carrier = hour_carrier.loc[hour_carrier['flight']>=500]
+hour_carrier
+```
+
+## 2-4. 시간대별  JFK 공항 혼잡도 분석 {.scrollable}
+
+```{python}
+plt.figure(figsize=(12, 6))
+sns.scatterplot(data=hour_carrier, x="hour", y="carrier", size="flight", hue="flight", 
+                sizes=(20, 200), palette="coolwarm", edgecolor="black")
+plt.xlabel("Hour")
+plt.ylabel("Carrier")
+plt.xticks(range(week_day_end["hour"].min(), week_day_end["hour"].max() + 1))  
+plt.grid(True, linestyle="--", alpha=0.5)
+plt.show()
+```
+
+<ul class="checked-list">
+<li>
+혼잡하지 않은 시간대에 항공사별 운행량:
+<ul>
+<li>x축 : 시간 </li>
+<li>y축 : 항공사 별 운행량 </li>
+<li>시간대 별로 어떤 항공사가 항공기를 운행하는지 알 수 있음</li>
+<li>점의 크기는 항공기 flight_count를 나타냄</li>
+</ul>
+</li>
+
+## 2-4. 시간대별  JFK 공항 혼잡도 분석 {.scrollable}
+
+```{python}
+#| echo: true
+model_seat_count = merged.groupby('carrier')['seats'].mean().reset_index().sort_values('seats') 
+print(model_seat_count.tail()) # 시트 수 많은 비행기
+print(defc.head())
+```
+
+## 3. 결론 {.scrollable}
+
+```{python}
+
+fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+
+color = ['#08519c'] * 5 + ['#9ecae1'] * 5  
+
+sns.barplot(
+    data=n_jfk_dest_flight, 
+    x='dest',
+    y="flight_count", 
+    palette=color,
+    ax=axes[0]  
+)
+
+# 첫 번째 그래프 
+axes[0].set_xlabel("Destination", fontsize=12, fontweight="bold")
+axes[0].set_ylabel("Flight Count", fontsize=12, fontweight="bold")
+axes[0].set_xticklabels(axes[0].get_xticklabels(), rotation=45, ha="right")
+axes[0].set_title("Flight Count by Destination", fontsize=14, fontweight="bold")
+
+
+sns.barplot(
+    data=pivot_diff,
+    x="carrier",
+    y="flight_diff",  
+    palette=["#deebf7" if x < 0 else "#08519c" for x in pivot_diff["flight_diff"]],
+    ax=axes[1]  
+)
+
+# 두 번째 그래프
+axes[1].set_xlabel("Carrier", fontsize=12, fontweight="bold")
+axes[1].set_ylabel("Flight Difference", fontsize=12, fontweight="bold")
+axes[1].set_xticklabels(axes[1].get_xticklabels(), rotation=45, ha="right")
+axes[1].axhline(0, color='black', linewidth=1) 
+axes[1].set_title("Flight Difference by Carrier", fontsize=14, fontweight="bold")
+
+plt.tight_layout()
+plt.show()
+```
+
+
+<ul class="checked-list">
+<li>
+2-2 그래프, 2-3 그래프:
+<ul>
+<li> 세 공항 비교 상위 5개 행선지 비교 결과, JFK에서 상대적으로 적게 운행하는 노선 확인 가능</li>
+<li> JFK가 상대적으로 적게 운행하는 노선 기준으로 주력 항공사 비교</li>
+<li> 9E, B6, VX를 제외한 항공사는 JFK를 주 항공으로 이용하지 않음</li>
+<li> -> UA,US,MQ,EV,DL,FL,AA 등을 타겟으로 할 수 있음 </li>
+</ul>
+</li>
+
+
+
+## 3. 결론 {.scrollable} 
+
+```{python}
+plt.figure(figsize=(12, 6))
+
+sns.scatterplot(data=hour_carrier, x="hour", y="carrier", size="flight", hue="flight", 
+                sizes=(20, 200), palette="coolwarm", edgecolor="black")
+# 그래프 설정
+plt.xlabel("Hour")
+plt.ylabel("Carrier")
+plt.xticks(range(week_day_end["hour"].min(), week_day_end["hour"].max() + 1))  
+plt.grid(True, linestyle="--", alpha=0.5)
+
+# 그래프 출력
+plt.show()
+```
+
+<ul class="checked-list">
+<li>
+2-4 그래프:
+<ul>
+<li> 점이 찍혀있는 시간대는 우리 공항이 여유로운 시간대</li>
+<li> 점의 크기는 항공기 운행량을 나타냄</li>
+<li> 각 항공사별로 최대한 많은 시간대에 걸려있는 순으로 나열</li>
+<li>-> B6, UA, US, EV, AA, MQ, DL, WN, 9E </li>
+</ul>
+</li>
+
+## 3. 결론 {.scrollable} 
+
+```{python}
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+
+sns.barplot(data=pivot_diff, x="carrier", y="flight_diff", 
+            palette=["#deebf7" if x < 0 else "#08519c" for x in pivot_diff["flight_diff"]],
+            ax=axes[0])
+axes[0].set_xlabel("Carrier")
+axes[0].set_ylabel("Flight Difference")
+axes[0].set_title("1. Flight Difference by Carrier")
+axes[0].axhline(0, color='black', linewidth=1)
+axes[0].tick_params(axis='x', rotation=45)
+
+sns.scatterplot(data=hour_carrier, x="hour", y="carrier", size="flight", hue="flight",
+                sizes=(20, 200), palette="coolwarm", edgecolor="black", ax=axes[1])
+axes[1].set_xlabel("Hour")
+axes[1].set_ylabel("Carrier")
+axes[1].set_title("2. Carrier Distribution by Hour")
+axes[1].grid(True, linestyle="--", alpha=0.5)
+
+plt.tight_layout()
+
+plt.show()
+```
+
+
+<ul class="checked-list">
+<li>
+2-3 그래프,2-4 그래프:
+<ul>
+<li>이미 잘 운영하고 있는 항공사라고 나온 B6, 9E를 제외 </li>
+<li>-> UA, US, EV, AA, MQ, DL, WN 등을 타겟으로 할 수 있음</li>
+</ul>
+</li>
+
+
+## 3. 결론 {.scrollable} 
+
+```{python}
+model_seat_count = merged.groupby('carrier')['seats'].mean().reset_index().sort_values('seats') # 시각화 / 평균 시트수 많은 순
+model_seat_count.tail() # 시트 수 많은 비행기
+```
+
+
+<ul class="checked-list">
+<li>
+2-3 그래프,2-4 그래프:
+<ul>
+<li>피크시간대에 시트수가 많은 항공기를 운행하는 항공사를 뽑아냄</li>
+<li>->HA, AA, AS, F9, VX 이를 타겟으로 할 수 있음</li>
+</ul>
+</li>
+
+
+
+## 3. 결론 {.scrollable} 
+
+
+<ul class="checked-list">
+<li>
+2-3 그래프,2-4 그래프:
+<ul>
+<li> -> UA,US,MQ,EV,DL,FL,AA 등을 타겟으로 할 수 있음 </li>
+<li>-> B6, UA, US, EV, AA, MQ, DL, WN, 9E</li>
+<li>->UA, US, EV, AA, MQ, DL, WN 등을 타겟으로 할 수 있음</li>
+<br>
+<li>공통으로 계속 우선순위로 있는 UA, US, EV를 타겟으로 하면 좋을 것 같다</li>
+</ul>
+
+## 3. 결론 {.scrollable} 
+
+<ul class="checked-list">
+<li>
+시트 수 테이블:
+<ul>
+<li>->HA, AA, AS, F9, VX 이를 타겟으로 할 수 있음</li>
+</ul>
