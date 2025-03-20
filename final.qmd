@@ -265,9 +265,9 @@ merged['time_hour'] = pd.to_datetime(merged['time_hour']) #날짜데이터 변�
 
 def week_select(x):
     if x>4:
-        return True
+        return '주말'
     else:
-        return False
+        return '평일'
     
 merged['week'] = merged['time_hour'].dt.weekday.apply(week_select) #요일 변환 주말 True
 
@@ -277,8 +277,8 @@ week_day_end = merged.loc[merged['origin']== 'JFK'].pivot_table(
     aggfunc='count'
 ).reset_index() # JFK 시간 주별 운행량
 
-weekend = week_day_end.loc[week_day_end['week'] == 1]['flight']/2
-weekday = week_day_end.loc[week_day_end['week'] == 0]['flight']/5 #비율 대로 나누어
+weekend = week_day_end.loc[week_day_end['week'] == '주말']['flight']/2
+weekday = week_day_end.loc[week_day_end['week'] == '평일']['flight']/5 #비율 대로 나누어
 
 combined = pd.concat([weekend, weekday], ignore_index=False) #합쳐서
 combined.sort_index()
@@ -296,7 +296,7 @@ sns.barplot(
     x="hour", 
     y="flight", 
     hue="week",
-    palette={0: "lightblue", 1: "darkblue"}, 
+    palette={'평일': "lightblue", '주말': "darkblue"}, 
     ci=None)
 
 plt.xlabel("hour")
